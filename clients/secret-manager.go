@@ -9,14 +9,14 @@ import (
 )
 
 // GetSecret fetches the latest version of a secret from Google Secret Manager.
-func GetSecret(ctx context.Context, projectID, secretID string) (string, error) {
+func GetSecret(ctx context.Context, projectNumber, secretID string) (string, error) {
 	client, err := secretmanager.NewClient(ctx)
 	if err != nil {
 		return "", fmt.Errorf("failed to create secret manager client: %w", err)
 	}
 	defer client.Close()
 
-	name := fmt.Sprintf("projects/%s/secrets/%s/versions/latest", projectID, secretID)
+	name := fmt.Sprintf("projects/%s/secrets/%s/versions/latest", projectNumber, secretID)
 	req := &secretmanagerpb.AccessSecretVersionRequest{
 		Name: name,
 	}

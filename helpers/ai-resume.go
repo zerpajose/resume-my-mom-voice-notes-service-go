@@ -26,7 +26,7 @@ type GeminiResponse struct {
 // AIResume summarizes the transcription using Gemini API.
 func AIResume(ctx context.Context, cfg config.Config, transcription string) (string, error) {
 	// Get Gemini API key from Secret Manager
-	apiKey, err := clients.GetSecret(ctx, cfg.GoogleProjectID, cfg.GeminiAPIKey)
+	apiKey, err := clients.GetSecret(ctx, cfg.GoogleProjectNumber, cfg.GeminiAPIKey)
 	if err != nil {
 		return "", fmt.Errorf("failed to get Gemini API key: %w", err)
 	}
