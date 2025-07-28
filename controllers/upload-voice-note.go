@@ -50,43 +50,43 @@ func UploadVoiceNote(
 		return fmt.Errorf("failed to upload file to storage: %w", err)
 	}
 
-	// Firestore logic
+	// Firestore logic with transaction to avoid race conditions
 	collection := firestoreClient.Collection(collectionName)
-	docs, err := collection.
-		Where("chatId", "==", chatId).
-		Where("finished", "==", false).
-		Documents(ctx).GetAll()
-	if err != nil {
-		return fmt.Errorf("failed to query firestore: %w", err)
-	}
-
-	if len(docs) == 0 {
-		id := uuid.New().String()
-		_, err := collection.Doc(id).Set(ctx, map[string]interface{}{
-			"id":        id,
-			"fileKeys":  []string{fileName},
-			"chatId":    chatId,
-			"createdAt": time.Now().Format(time.RFC3339),
-			"finished":  false,
-		})
-		return err
-	}
-
-	// Update existing doc
-	doc := docs[0]
-	data := doc.Data()
-	fileKeys := []string{}
-	if fk, ok := data["fileKeys"].([]interface{}); ok {
-		for _, v := range fk {
-			if s, ok := v.(string); ok {
-				fileKeys = append(fileKeys, s)
+	err = firestoreClient.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+		// Query for unfinished thread for this chatId
+		docs, err := tx.Documents(collection.
+			Where("chatId", "==", chatId).
+			Where("finished", "==", false)).GetAll()
+		if err != nil {
+			return fmt.Errorf("failed to query firestore: %w", err)
+		}
+		if len(docs) == 0 {
+			// Create new doc
+			id := uuid.New().String()
+			return tx.Set(collection.Doc(id), map[string]interface{}{
+				"id":        id,
+				"fileKeys":  []string{fileName},
+				"chatId":    chatId,
+				"createdAt": time.Now().Format(time.RFC3339),
+				"finished":  false,
+			})
+		}
+		// Update existing doc
+		doc := docs[0]
+		data := doc.Data()
+		fileKeys := []string{}
+		if fk, ok := data["fileKeys"].([]interface{}); ok {
+			for _, v := range fk {
+				if s, ok := v.(string); ok {
+					fileKeys = append(fileKeys, s)
+				}
 			}
 		}
-	}
-	fileKeys = append(fileKeys, fileName)
-	_, err = doc.Ref.Update(ctx, []firestore.Update{
-		{Path: "fileKeys", Value: fileKeys},
-		{Path: "updatedAt", Value: time.Now().Format(time.RFC3339)},
+		fileKeys = append(fileKeys, fileName)
+		return tx.Update(doc.Ref, []firestore.Update{
+			{Path: "fileKeys", Value: fileKeys},
+			{Path: "updatedAt", Value: time.Now().Format(time.RFC3339)},
+		})
 	})
 	return err
 }
