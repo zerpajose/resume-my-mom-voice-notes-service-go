@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	"github.com/zerpajose/resume-my-mom-voice-notes-service-go/clients"
-	"github.com/zerpajose/resume-my-mom-voice-notes-service-go/config"
 )
 
 // GeminiRequest is the request payload for the Gemini API.
@@ -24,9 +23,9 @@ type GeminiResponse struct {
 }
 
 // AIResume summarizes the transcription using Gemini API.
-func AIResume(ctx context.Context, cfg config.Config, transcription string) (string, error) {
+func AIResume(ctx context.Context, googleProjectNumber string, geminiAPIKey string, transcription string) (string, error) {
 	// Get Gemini API key from Secret Manager
-	apiKey, err := clients.GetSecret(ctx, cfg.GoogleProjectNumber, cfg.GeminiAPIKey)
+	apiKey, err := clients.GetSecret(ctx, googleProjectNumber, geminiAPIKey)
 	if err != nil {
 		return "", fmt.Errorf("failed to get Gemini API key: %w", err)
 	}

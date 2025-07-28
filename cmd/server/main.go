@@ -43,18 +43,16 @@ func main() {
 
 	r.GET("/finish-thread/:chatId", func(c *gin.Context) {
 		chatId := c.Param("chatId")
-		// Dummy AI resume function, replace with your actual implementation
-		aiResumeFunc := func(input string) (string, error) {
-			return "AI summary not implemented", nil
-		}
+
 		result, err := controllers.FinishThread(
 			c.Request.Context(),
 			firestoreClient,
 			storageClient,
 			cfg.BucketName,
 			cfg.CollectionName,
+			cfg.GoogleProjectNumber,
+			cfg.GeminiAPIKey,
 			chatId,
-			aiResumeFunc,
 		)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

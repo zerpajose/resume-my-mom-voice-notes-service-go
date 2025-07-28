@@ -18,8 +18,9 @@ func FinishThread(
 	storageClient *storage.Client,
 	bucketName string,
 	collectionName string,
+	googleProjectNumber string,
+	geminiAPIKey string,
 	chatId string,
-	aiResumeFunc func(string) (string, error), // Pass your AI summary function here
 ) (string, error) {
 	collection := firestoreClient.Collection(collectionName)
 	iter := collection.
@@ -64,7 +65,7 @@ func FinishThread(
 	}
 
 	// Summarize transcription
-	summary, err := aiResumeFunc(transcription)
+	summary, err := helpers.AIResume(ctx, googleProjectNumber, geminiAPIKey, transcription)
 	if err != nil {
 		return "", fmt.Errorf("failed to summarize transcription: %w", err)
 	}
