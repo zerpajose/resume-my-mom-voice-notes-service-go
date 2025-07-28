@@ -61,7 +61,14 @@ func MergeAudioFiles(ctx context.Context, storageClient *storage.Client, bucketN
 	list.Close()
 
 	// Merge using ffmpeg
-	cmd := exec.Command("ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", listFile, "-c", "copy", mergedFilePath)
+	var cmd *exec.Cmd
+	if outputFormat == "mp3" {
+		// Re-encode to mp3 to avoid codec mismatch errors
+		cmd = exec.Command("ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", listFile, "-c:a", "libmp3lame", mergedFilePath)
+	} else {
+		// Use stream copy for other formats (if input matches output)
+		cmd = exec.Command("ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", listFile, "-c", "copy", mergedFilePath)
+	}
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return "", fmt.Errorf("ffmpeg error: %v, output: %s", err, string(out))
 	}
