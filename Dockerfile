@@ -19,12 +19,11 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/server/main.go
 FROM debian:12-slim as ffmpeg-installer
 RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 
-FROM gcr.io/distroless/base-debian12
+FROM debian:12-slim as final
 WORKDIR /app
 
-# Copy ffmpeg binary from installer stage
-COPY --from=ffmpeg-installer /usr/bin/ffmpeg /usr/bin/ffmpeg
-COPY --from=ffmpeg-installer /usr/bin/ffprobe /usr/bin/ffprobe
+# Install ffmpeg (again, to ensure all dependencies are present)
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 
 # Copy the built binary from the builder
 COPY --from=builder /app/server ./server
